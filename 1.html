@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <style>
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: monospace;
+            padding: 50px;
+            text-align: center;
+        }
+        #encrypted {
+            font-size: 24px;
+            white-space: pre-wrap;
+            margin-bottom: 30px;
+        }
+        #hint {
+            color: #888;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="encrypted">所加密内容：aHR0cHM6Ly9iMjMudHYvS3ZCRkN1bg==</div>
+    <div id="hint">这个加密内容是链接，解密出后直接浏览器链接栏输入，方法自己探索，但是是一般的解密方式</div>
+
+    <script>
+        // 禁止查看源码功能
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            alert('源码查看已禁用');
+        });
+        
+        document.addEventListener('keydown', function(e) {
+            // 禁用Ctrl+U
+            if (e.ctrlKey && e.keyCode === 85) {
+                e.preventDefault();
+                alert('源码查看已禁用');
+            }
+            // 禁用F12
+            if (e.keyCode === 123) {
+                e.preventDefault();
+                alert('源码查看已禁用');
+            }
+        });
+    </script>
+</body>
+</html>
