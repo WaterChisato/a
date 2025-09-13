@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全球实时时间 | 水喝千束的博客</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #e6f4ff 0%, #f8f9ff 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem 1rem;
+            color: #2d3436;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 1.2rem;
+            left: 1.2rem;
+            padding: 0.6rem 1.2rem;
+            background: rgba(255, 255, 255, 0.95);
+            color: #2c3e50;
+            text-decoration: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            z-index: 100;
+            border: 1px solid #e0e0e0;
+        }
+
+        .back-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #636e72;
+            font-size: 1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .time-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.8rem;
+        }
+
+        .time-card {
+            background: white;
+            padding: 1.8rem;
+            border-radius: 14px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .time-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .time-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: #74b9ff;
+            opacity: 0.15;
+        }
+
+        .location {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3436;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .location::before {
+            content: '📍';
+            margin-right: 0.6rem;
+            font-size: 1.1rem;
+        }
+
+        .time-display {
+            font-size: 2.1rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 0.8rem;
+            letter-spacing: 0.5px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .date-info {
+            color: #636e72;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .timezone {
+            font-size: 0.85rem;
+            color: #b2bec3;
+            margin-top: 0.3rem;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .time-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .time-display {
+                font-size: 1.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="https://waterchisato.github.io" class="back-btn" target="_blank">← 返回主页</a>
+    
+    <div class="container">
+        <div class="header">
+            <h1>全球实时时间同步</h1>
+            <p>覆盖五大洲主要城市，时间基于IANA时区标准自动校准（含夏令时）(中国大陆新疆地区无法更改，约早4小时)</p>
+        </div>
+        
+        <div class="time-grid" id="timeGrid"></div>
+    </div>
+
+    <script>
+        // 全球主要城市时区配置（IANA标准时区）
+        const globalCities = [
+            { city: "北京", tz: "Asia/Shanghai" },       // 中国
+            { city: "东京", tz: "Asia/Tokyo" },           // 日本
+            { city: "首尔", tz: "Asia/Seoul" },           // 韩国
+            { city: "新加坡", tz: "Asia/Singapore" },     // 新加坡
+            { city: "孟买", tz: "Asia/Kolkata" },         // 印度
+            { city: "迪拜", tz: "Asia/Dubai" },           // 阿联酋
+            { city: "伦敦", tz: "Europe/London" },        // 英国
+            { city: "巴黎", tz: "Europe/Paris" },         // 法国
+            { city: "柏林", tz: "Europe/Berlin" },        // 德国
+            { city: "莫斯科", tz: "Europe/Moscow" },      // 俄罗斯
+            { city: "纽约", tz: "America/New_York" },     // 美国（东部）
+            { city: "洛杉矶", tz: "America/Los_Angeles" },// 美国（西部）
+            { city: "多伦多", tz: "America/Toronto" },    // 加拿大
+            { city: "圣保罗", tz: "America/Sao_Paulo" },  // 巴西（南美）
+            { city: "悉尼", tz: "Australia/Sydney" },     // 澳大利亚
+            { city: "惠灵顿", tz: "Pacific/Auckland" }    // 新西兰（大洋洲）
+        ];
+
+        // 格式化时间为本地化字符串（带秒）
+        function formatTime(date, timeZone) {
+            return new Intl.DateTimeFormat('zh-CN', {
+                timeZone,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+                timeZoneName: 'shortOffset'
+            }).format(date);
+        }
+
+        // 格式化日期（含星期）
+        function formatDate(date, timeZone) {
+            return new Intl.DateTimeFormat('zh-CN', {
+                timeZone,
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'long'
+            }).format(date);
+        }
+
+        // 更新所有城市时间
+        function updateAllTimes() {
+            const now = new Date();
+            const timeGrid = document.getElementById('timeGrid');
+            
+            globalCities.forEach(city => {
+                // 获取该时区的格式化时间
+                const timeStr = formatTime(now, city.tz);
+                const dateStr = formatDate(now, city.tz);
+                
+                // 提取纯时间（HH:MM:SS）和时区缩写（如CST、JST）
+                const [pureTime, tzAbbrev] = timeStr.split(' ');
+                
+                // 创建/更新时间卡片
+                let card = timeGrid.querySelector(`[data-city="${city.city}"]`);
+                if (!card) {
+                    card = document.createElement('div');
+                    card.className = 'time-card';
+                    card.dataset.city = city.city;
+                    timeGrid.appendChild(card);
+                }
+                
+                card.innerHTML = `
+                    <div class="location">${city.city}</div>
+                    <div class="time-display">${pureTime}</div>
+                    <div class="date-info">
+                        ${dateStr}<br>
+                        <span class="timezone">UTC${tzAbbrev.replace('UTC', '')}</span>
+                    </div>
+                `;
+            });
+        }
+
+        // 首次加载立即执行
+        updateAllTimes();
+        // 每秒更新时间（确保秒数实时变化）
+        setInterval(updateAllTimes, 1000);
+    </script>
+</body>
+</html>
